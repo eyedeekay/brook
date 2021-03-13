@@ -183,7 +183,7 @@ func (x *WSClient) DialWebsocket(src string) (net.Conn, error) {
 }
 
 // TCPHandle handles tcp request.
-func (x *WSClient) TCPHandle(s *socks5.Server, c *net.TCPConn, r *socks5.Request) error {
+func (x *WSClient) TCPHandle(s *socks5.Server, c net.Conn, r *socks5.Request) error {
 	if r.Cmd == socks5.CmdConnect {
 		debug("dial tcp", r.Address())
 		rc, err := x.DialWebsocket("")
@@ -229,7 +229,7 @@ func (x *WSClient) TCPHandle(s *socks5.Server, c *net.TCPConn, r *socks5.Request
 }
 
 // UDPHandle handles udp request.
-func (x *WSClient) UDPHandle(s *socks5.Server, addr *net.UDPAddr, d *socks5.Datagram) error {
+func (x *WSClient) UDPHandle(s *socks5.Server, addr net.Addr, d *socks5.Datagram) error {
 	src := addr.String()
 	dst := d.Address()
 	any, ok := s.UDPExchanges.Get(src + dst)
@@ -281,7 +281,7 @@ func (x *WSClient) UDPHandle(s *socks5.Server, addr *net.UDPAddr, d *socks5.Data
 	defer sc.Clean()
 	ps, pi := NewPacketStream(func(b []byte) (int, error) {
 		d.Data = b
-		return s.UDPConn.WriteToUDP(d.Bytes(), addr)
+		return s.PacketConn.WriteTo(d.Bytes(), addr)
 	})
 	defer ps.Close()
 	ue := &UDPExchange{

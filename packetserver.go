@@ -22,7 +22,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"io"
-	"net"
+	//"net"
 	"time"
 
 	"github.com/txthinking/socks5"
@@ -48,14 +48,14 @@ func NewPacketServer(password []byte) *PacketServer {
 	return s
 }
 
-func (s *PacketServer) RemoteToClient(remote net.Conn, timeout int, dst []byte, toclient io.Writer) error {
+func (s *PacketServer) RemoteToClient(remote conn, timeout int, dst []byte, toclient io.Writer) error {
 	for {
 		if timeout != 0 {
 			if err := remote.SetDeadline(time.Now().Add(time.Duration(timeout) * time.Second)); err != nil {
 				return err
 			}
 		}
-		l, err := remote.Read(s.wb[12+len(dst) : 65507-16])
+		l, err := getRightRead(remote)(s.wb[12+len(dst) : 65507-16])
 		if err != nil {
 			return nil
 		}

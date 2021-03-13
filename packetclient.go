@@ -23,12 +23,32 @@ import (
 	"errors"
 	"io"
 	"net"
+//	"reflect"
 	"time"
 
 	"github.com/txthinking/socks5"
 	"github.com/txthinking/x"
 	"golang.org/x/crypto/hkdf"
 )
+
+
+// conn interface implements just the shared parts of net.Conn and net.PacketConn.
+type conn interface {
+    Close() error
+    LocalAddr() net.Addr
+    SetDeadline(t time.Time) error
+    SetReadDeadline(t time.Time) error
+    SetWriteDeadline(t time.Time) error
+}
+
+func getRightWrite(connection conn) (func([]byte) (int, error)) {
+	return connection.(net.Conn).Write
+}
+
+func getRightRead(connection conn) (func([]byte) (int, error)) {
+	return connection.(net.Conn).Read
+}
+
 
 type PacketClient struct {
 	Server        net.Conn
@@ -54,7 +74,7 @@ var ClientPacket func([]byte, []byte) ([]byte, []byte, error) = func(dst, d []by
 	return dst, d, nil
 }
 
-func (c *PacketClient) LocalToServer(dst, d []byte, server net.Conn, timeout int) error {
+func (c *PacketClient) LocalToServer(dst, d []byte, server conn, timeout int) error {
 	dst, d, err := ClientPacket(dst, d)
 	if err != nil {
 		return err
@@ -86,14 +106,14 @@ func (c *PacketClient) LocalToServer(dst, d []byte, server net.Conn, timeout int
 		return err
 	}
 	ca.Seal(c.WB[:12], c.WB[:12], c.WB[12:12+4+len(dst)+len(d)], nil)
-	_, err = server.Write(c.WB[:12+4+len(dst)+len(d)+16])
+	_, err = getRightWrite(server)(c.WB[:12+4+len(dst)+len(d)+16])
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *PacketClient) RunServerToLocal(server net.Conn, timeout int, tolocal func(dst, d []byte) (int, error)) error {
+func (c *PacketClient) RunServerToLocal(server conn, timeout int, tolocal func(dst, d []byte) (int, error)) error {
 	for {
 		if err := c.ServerToLocal(server, timeout, tolocal); err != nil {
 			return err
@@ -102,13 +122,13 @@ func (c *PacketClient) RunServerToLocal(server net.Conn, timeout int, tolocal fu
 	return nil
 }
 
-func (c *PacketClient) ServerToLocal(server net.Conn, timeout int, tolocal func(dst, d []byte) (int, error)) error {
+func (c *PacketClient) ServerToLocal(server conn, timeout int, tolocal func(dst, d []byte) (int, error)) error {
 	if timeout != 0 {
 		if err := server.SetDeadline(time.Now().Add(time.Duration(timeout) * time.Second)); err != nil {
 			return err
 		}
 	}
-	i, err := server.Read(c.RB)
+	i, err := getRightRead(server)(c.RB)
 	if err != nil {
 		return err
 	}

@@ -213,7 +213,7 @@ func (s *Server) UDPHandle(addr *net.UDPAddr, b []byte) error {
 	if laddr == nil {
 		s.UDPSrc.Set(src+dst, rc.LocalAddr().(*net.UDPAddr), -1)
 	}
-	wer := w(rc.Write)
+	wer := w(getRightWrite(rc))
 	if _, err := wer.Write(d); err != nil {
 		return err
 	}

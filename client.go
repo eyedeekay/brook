@@ -58,7 +58,7 @@ func (x *Client) ListenAndServe() error {
 }
 
 // TCPHandle handles tcp request.
-func (x *Client) TCPHandle(s *socks5.Server, c *net.TCPConn, r *socks5.Request) error {
+func (x *Client) TCPHandle(s *socks5.Server, c net.Conn, r *socks5.Request) error {
 	if r.Cmd == socks5.CmdConnect {
 		debug("dial tcp", r.Address())
 		rc, err := Dial.Dial("tcp", x.ServerAddress)
@@ -104,13 +104,13 @@ func (x *Client) TCPHandle(s *socks5.Server, c *net.TCPConn, r *socks5.Request) 
 }
 
 type UDPExchange struct {
-	Conn net.Conn
+	Conn conn
 	Any  interface{}
 	Dst  []byte
 }
 
 // UDPHandle handles udp request.
-func (x *Client) UDPHandle(s *socks5.Server, addr *net.UDPAddr, d *socks5.Datagram) error {
+func (x *Client) UDPHandle(s *socks5.Server, addr net.Addr, d *socks5.Datagram) error {
 	src := addr.String()
 	dst := d.Address()
 	any, ok := s.UDPExchanges.Get(src + dst)
@@ -158,7 +158,7 @@ func (x *Client) UDPHandle(s *socks5.Server, addr *net.UDPAddr, d *socks5.Datagr
 	defer s.UDPExchanges.Delete(src + dst)
 	err = pc.RunServerToLocal(rc, s.UDPTimeout, func(dst, b []byte) (int, error) {
 		d.Data = b
-		return s.UDPConn.WriteToUDP(d.Bytes(), addr)
+		return s.PacketConn.WriteTo(d.Bytes(), addr)
 	})
 	if err != nil {
 		return nil

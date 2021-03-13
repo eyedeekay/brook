@@ -216,7 +216,7 @@ func (s *Relay) TCPHandle(c *net.TCPConn) error {
 func (s *Relay) UDPHandle(addr *net.UDPAddr, b []byte) error {
 	src := addr.String()
 	send := func(ue *socks5.UDPExchange, data []byte) error {
-		_, err := ue.RemoteConn.Write(data)
+		_, err := getRightWrite(ue.RemoteConn)(data)
 		if err != nil {
 			return err
 		}
@@ -269,11 +269,11 @@ func (s *Relay) UDPHandle(addr *net.UDPAddr, b []byte) error {
 					break
 				}
 			}
-			n, err := ue.RemoteConn.Read(b[:])
+			n, err := getRightRead(ue.RemoteConn)(b[:])
 			if err != nil {
 				break
 			}
-			if _, err := s.UDPConn.WriteToUDP(b[0:n], ue.ClientAddr); err != nil {
+			if _, err := s.UDPConn.WriteToUDP(b[0:n], ue.ClientAddr.(*net.UDPAddr)); err != nil {
 				break
 			}
 		}

@@ -20,3 +20,6 @@ require (
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
 	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110
 )
+
+replace github.com/txthinking/socks5 v0.0.0-20210106113028-328af325654e => github.com/eyedeekay/socks5 v0.0.0-20210312233714-7d95dbdbcc0f
+replace github.com/txthinking/x v0.0.0-20201210150116-a8015a742c8c => github.com/eyedeekay/x v0.0.0-20210312211721-5efa05df800e

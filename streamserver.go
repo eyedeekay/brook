@@ -39,7 +39,7 @@ type StreamServer struct {
 	WB       []byte
 	Timeout  int
 	Network  string
-	ConnFunc func(net.Conn) net.Conn
+	ConnFunc func(conn) conn
 }
 
 func NewStreamServer(password []byte, client net.Conn, timeout int) (*StreamServer, []byte, error) {
@@ -153,7 +153,7 @@ var StreamServerInit func(*StreamServer, int) (*StreamServer, []byte, error) = f
 			return nil, nil, err
 		}
 	}
-	s.ConnFunc = func(conn net.Conn) net.Conn {
+	s.ConnFunc = func(conn conn) conn {
 		if s.Timeout != 0 {
 			conn.SetDeadline(time.Now().Add(time.Duration(s.Timeout) * time.Second))
 		}
@@ -162,7 +162,7 @@ var StreamServerInit func(*StreamServer, int) (*StreamServer, []byte, error) = f
 	return s, s.RB[2+16+4 : 2+16+l], nil
 }
 
-func (s *StreamServer) Exchange(remote net.Conn) error {
+func (s *StreamServer) Exchange(remote conn) error {
 	remote = s.ConnFunc(remote)
 	defer remote.Close()
 	go func() {
@@ -172,7 +172,7 @@ func (s *StreamServer) Exchange(remote net.Conn) error {
 					return
 				}
 			}
-			l, err := remote.Read(s.WB[2+16 : len(s.WB)-16])
+			l, err := getRightRead(remote)(s.WB[2+16 : len(s.WB)-16])
 			if err != nil {
 				return
 			}
@@ -191,7 +191,7 @@ func (s *StreamServer) Exchange(remote net.Conn) error {
 		if err != nil {
 			return nil
 		}
-		if _, err := remote.Write(s.RB[2+16 : 2+16+l]); err != nil {
+		if _, err := getRightWrite(remote)(s.RB[2+16 : 2+16+l]); err != nil {
 			return nil
 		}
 	}
