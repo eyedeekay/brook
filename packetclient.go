@@ -23,7 +23,7 @@ import (
 	"errors"
 	"io"
 	"net"
-//	"reflect"
+	//	"reflect"
 	"time"
 
 	"github.com/txthinking/socks5"
@@ -31,24 +31,22 @@ import (
 	"golang.org/x/crypto/hkdf"
 )
 
-
 // conn interface implements just the shared parts of net.Conn and net.PacketConn.
 type conn interface {
-    Close() error
-    LocalAddr() net.Addr
-    SetDeadline(t time.Time) error
-    SetReadDeadline(t time.Time) error
-    SetWriteDeadline(t time.Time) error
+	Close() error
+	LocalAddr() net.Addr
+	SetDeadline(t time.Time) error
+	SetReadDeadline(t time.Time) error
+	SetWriteDeadline(t time.Time) error
 }
 
-func getRightWrite(connection conn) (func([]byte) (int, error)) {
+func getRightWrite(connection conn) func([]byte) (int, error) {
 	return connection.(net.Conn).Write
 }
 
-func getRightRead(connection conn) (func([]byte) (int, error)) {
+func getRightRead(connection conn) func([]byte) (int, error) {
 	return connection.(net.Conn).Read
 }
-
 
 type PacketClient struct {
 	Server        net.Conn
